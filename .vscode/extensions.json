@@ -1,0 +1,8 @@
+{
+    "recommendations": [
+        "tintinweb.solidity-metrics",
+        "tamasfe.even-better-toml",
+        "nomicfoundation.hardhat-solidity",
+        "tomoki1207.pdf"
+    ]
+}

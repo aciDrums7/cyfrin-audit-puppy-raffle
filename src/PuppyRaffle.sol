@@ -113,6 +113,7 @@ contract PuppyRaffle is ERC721, Ownable {
                 return i;
             }
         }
+        //! why return zero if player not found? At index 0 we could have an active player
         return 0;
     }
 
