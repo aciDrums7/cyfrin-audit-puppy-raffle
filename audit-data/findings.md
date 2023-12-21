@@ -65,4 +65,42 @@ function test_EnterRaffleDenialOfService() public {
     }
 ```
 
-**Recommended Mitigation:** 
+**Recommended Mitigation:** There are a few recommendations.
+
+1. Consider allowing duplicates. Users can make new wallet addresses anyways, so a duplicate check doesn't prevent the same person from entering multiple times, only the same wallet address.
+2. Consider using a mapping to check for duplicates. This would allow constant time lookup of wether a user has already entered.
+
+```diff
++   uint256 public raffleID = 1;
++   mapping(address => uint256) public playerToRaffleID;
+.
+.
+.
+    function enterRaffle(address[] memory newPlayers) public payable {
+        require(msg.value == entranceFee * newPlayers.length, "PuppyRaffle: Must send enough to enter raffle");
++       // check for duplicates only from the new players and before adding them to the raffle
++       for(uint256 i; i < newPlayers.length; i++) {
++           require(playerToRaffleID[newPlayers[i]] != raffleID, "PuppyRaffle: Duplicate player");
++       }
+
+        for (uint256 i = 0; i < newPlayers.length; i++) {
+            players.push(newPlayers[i]);
++           playerToRaffleID[newPlayers[i]] = raffleID; 
+        }
+-       for (uint256 i = 0; i < players.length - 1; i++) {
+-           for (uint256 j = i + 1; j < players.length; j++) {
+-               require(players[i] != players[j], "PuppyRaffle: Duplicate player");
+-           }
+-       }
+        emit RaffleEnter(newPlayers);
+    }
+.
+.
+.
+    function selectWinner() external {
+        // existing code
++       raffleID++;
+    }
+```
+
+3. Alternatively, you could use [Openzeppelin's `EnumberableSet` library](https://docs.openzeppelin.com/contracts/4.x/api/utils#EnumerableSet).
