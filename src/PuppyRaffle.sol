@@ -117,7 +117,8 @@ contract PuppyRaffle is ERC721, Ownable {
                 return i;
             }
         }
-        //! why return zero if player not found? At index 0 we could have an active player
+        //? why return zero if player not found? At index 0 it could be an active player
+        //@audit if the player is at index 0, it'll return 0 and a player might think they are not active!
         return 0;
     }
 
