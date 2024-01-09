@@ -80,13 +80,13 @@ contract PuppyRaffle is ERC721, Ownable {
         //? did custom reverts exist in 0.7.6 solidity?
         //? what if 0?
         require(msg.value == entranceFee * newPlayers.length, "PuppyRaffle: Must send enough to enter raffle");
-        // @audit no check for address(0)
+        //3 @audit no check for address(0)
         for (uint256 i = 0; i < newPlayers.length; i++) {
             players.push(newPlayers[i]);
         }
 
         // Check for duplicates
-        // @audit Dos
+        //3 @audit Dos
         for (uint256 i = 0; i < players.length - 1; i++) {
             for (uint256 j = i + 1; j < players.length; j++) {
                 require(players[i] != players[j], "PuppyRaffle: Duplicate player");
@@ -98,12 +98,12 @@ contract PuppyRaffle is ERC721, Ownable {
     /// @param playerIndex the index of the player to refund. You can find it externally by calling `getActivePlayerIndex`
     /// @dev This function will allow there to be blank spots in the array
     function refund(uint256 playerIndex) public {
-        // @audit MEV
+        //3 @audit MEV
         address playerAddress = players[playerIndex];
         require(playerAddress == msg.sender, "PuppyRaffle: Only the player can refund");
         require(playerAddress != address(0), "PuppyRaffle: Player already refunded, or is not active");
 
-        // @audit reentrancy
+        //3 @audit reentrancy
         payable(msg.sender).sendValue(entranceFee);
 
         players[playerIndex] = address(0);
@@ -120,7 +120,7 @@ contract PuppyRaffle is ERC721, Ownable {
             }
         }
         //? why return zero if player not found? At index 0 it could be an active player
-        //@audit if the player is at index 0, it'll return 0 and a player might think they are not active!
+        //3 @audit if the player is at index 0, it'll return 0 and a player might think they are not active!
         return 0;
     }
 

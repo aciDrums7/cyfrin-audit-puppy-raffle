@@ -1,6 +1,4 @@
-Denial of Service attack
-
-### [M-#] Looping through players array to check for duplicates in `PuppyRaffle::enterRaffle` is a potential denial of service (DoS) attack, incrementing gas cost for future entrants
+### [M-#] Looping through players array to check for duplicates in `PuppyRaffle::enterRaffle` is a potential Denial of Service (DoS) attack, incrementing gas cost for future entrants
 
 <!-- IMPACT: MEDIUM -->
 <!-- LIKELIHOOD: MEDIUM -->
@@ -17,19 +15,19 @@ Denial of Service attack
 ```
 <!-- this will cause a problem even with front running, we'll talk of it later -->
 
-**Impact:** The has costs for raffle entrants will greatly increase as more players enter the raffle,discouraging later users from entering, and causing a rush at the start of a raffle to be one of the first entrants in the queue.
+**Impact:** The costs for raffle entrants will greatly increase as more players enter the raffle, discouraging later users from entering, and causing a rush at the start of a raffle to be one of the first entrants in the queue.
 
 An attacker might make the `PuppyRaffle::entrants` array so big, that no one else enters, guaranteeing themselves the win.
 
 **Proof of Concept:** (Proof of Code)
 
 If we have 2 sets of 100 players enter, the gas costs will be as such:
-- 1st 100 players: ~6250668 gas
-- 2st 100 players: ~18068760 gas
+- 1st 100 players: ~6.250.668 gas
+- 2st 100 players: ~18.068.760 gas
 
 This is more than 3x more expensive for the second 100 players.
 
-<details></details>
+<details>
 <summary>PoC</summary>
 Place the following test into `PuppyRaffleTest.t.sol`.
 
@@ -64,6 +62,7 @@ function test_EnterRaffleDenialOfService() public {
         assert(gasUsedFirst < gasEndSecond);
     }
 ```
+</details><br>
 
 **Recommended Mitigation:** There are a few recommendations.
 
