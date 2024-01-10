@@ -190,7 +190,7 @@ contract PuppyRaffle is ERC721, Ownable {
     function withdrawFees() external {
         //e this condition is true when selectWinner() has been called successfully
         //q so if the protocol has players someone can't withdraw fees?
-        // @audit is it difficult to withdraw fees?
+        // @audit mishandling ETH, selfdestruct possible
         require(address(this).balance == uint256(totalFees), "PuppyRaffle: There are currently players active!");
         uint256 feesToWithdraw = totalFees;
         totalFees = 0;
