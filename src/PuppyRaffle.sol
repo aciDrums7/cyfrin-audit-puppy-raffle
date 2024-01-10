@@ -77,8 +77,8 @@ contract PuppyRaffle is ERC721, Ownable {
     /// @notice duplicate entrants are not allowed
     /// @param newPlayers the list of players to enter the raffle
     function enterRaffle(address[] memory newPlayers) public payable {
-        //? did custom reverts exist in 0.7.6 solidity?
-        //? what if 0?
+        //q did custom reverts exist in 0.7.6 solidity?
+        //q what if 0?
         require(msg.value == entranceFee * newPlayers.length, "PuppyRaffle: Must send enough to enter raffle");
         // @audit no check for address(0)
         for (uint256 i = 0; i < newPlayers.length; i++) {
@@ -119,7 +119,7 @@ contract PuppyRaffle is ERC721, Ownable {
                 return i;
             }
         }
-        //? why return zero if player not found? At index 0 it could be an active player
+        //q why return zero if player not found? At index 0 it could be an active player
         // @audit if the player is at index 0, it'll return 0 and a player might think they are not active!
         return 0;
     }
@@ -131,8 +131,8 @@ contract PuppyRaffle is ERC721, Ownable {
     /// @dev we reset the active players array after the winner is selected
     /// @dev we send 80% of the funds to the winner, the other 20% goes to the feeAddress
     function selectWinner() external {
-        //? does this follows CEI?
-        //? are the duration & start time being set correctly?
+        //q does this follows CEI?
+        //q are the duration & start time being set correctly?
         require(block.timestamp >= raffleStartTime + raffleDuration, "PuppyRaffle: Raffle not over");
         require(players.length >= 4, "PuppyRaffle: Need at least 4 players");
 
@@ -142,9 +142,9 @@ contract PuppyRaffle is ERC721, Ownable {
             uint256(keccak256(abi.encodePacked(msg.sender, block.timestamp, block.difficulty))) % players.length;
         address winner = players[winnerIndex];
 
-        //? why not just do address(this).balance?
+        //q why not just do address(this).balance?
         uint256 totalAmountCollected = players.length * entranceFee;
-        //? is the 80% correct?
+        //q is the 80% correct?
         uint256 prizePool = (totalAmountCollected * 80) / 100;
         uint256 fee = (totalAmountCollected * 20) / 100;
         //1 this is the total fees the owner should be able to collect
@@ -153,12 +153,18 @@ contract PuppyRaffle is ERC721, Ownable {
         // 18.446744073709551615
         // 20.000000000000000000 uint256
         // 1.553255926290448384 uint64
-        // @audit
+        // @audit unsafe cast of uint256 to uint64
         totalFees = totalFees + uint64(fee);
 
+        //e when we mint a new puppy NFT, we use the totalSupply as the tokenId
+        //q where do we increment the tokenId/totalSupply?
         uint256 tokenId = totalSupply();
 
         // We use a different RNG calculate from the winnerIndex to determine rarity
+        // @audit randomness
+
+        //q if our transaction picks a winner we don't like it... revert?
+        //e gas war...// @followup
         uint256 rarity = uint256(keccak256(abi.encodePacked(msg.sender, block.difficulty))) % 100;
         if (rarity <= COMMON_RARITY) {
             tokenIdToRarity[tokenId] = COMMON_RARITY;
@@ -168,20 +174,27 @@ contract PuppyRaffle is ERC721, Ownable {
             tokenIdToRarity[tokenId] = LEGENDARY_RARITY;
         }
 
-        delete players;
-        raffleStartTime = block.timestamp;
-        previousWinner = winner;
+        delete players; //e resetting the players array
+        raffleStartTime = block.timestamp; //e resetting the raffle start time
+        previousWinner = winner; //e vanity, doesn't matter much
+
+        //q can we reenter somewhere?
+        //q what if the winner is a smart contract with a fallback that will revert?
+        // @audit the winner wouldn't get the money if their fallback was messed up!
         (bool success,) = winner.call{value: prizePool}("");
         require(success, "PuppyRaffle: Failed to send prize pool to winner");
         _safeMint(winner, tokenId);
     }
 
     /// @notice this function will withdraw the fees to the feeAddress
-    //! there's
     function withdrawFees() external {
+        //e this condition is true when selectWinner() has been called successfully
+        //q so if the protocol has players someone can't withdraw fees?
+        // @audit is it difficult to withdraw fees?
         require(address(this).balance == uint256(totalFees), "PuppyRaffle: There are currently players active!");
         uint256 feesToWithdraw = totalFees;
         totalFees = 0;
+        //q what if the feeAddress is a smart contract with a fallback that will revert?
         (bool success,) = feeAddress.call{value: feesToWithdraw}("");
         require(success, "PuppyRaffle: Failed to withdraw fees");
     }
