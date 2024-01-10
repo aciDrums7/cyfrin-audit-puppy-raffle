@@ -149,6 +149,7 @@ contract PuppyRaffle is ERC721, Ownable {
         uint256 fee = (totalAmountCollected * 20) / 100;
         //1 this is the total fees the owner should be able to collect
         //3 @audit overflow
+        //3 Fixes: Newer version of solidity, bigger uints
         totalFees = totalFees + uint64(fee);
 
         uint256 tokenId = totalSupply();
