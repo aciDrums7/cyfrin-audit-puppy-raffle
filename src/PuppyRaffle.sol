@@ -92,6 +92,7 @@ contract PuppyRaffle is ERC721, Ownable {
                 require(players[i] != players[j], "PuppyRaffle: Duplicate player");
             }
         }
+        //q if it's an empty array, we still emit an event?
         emit RaffleEnter(newPlayers);
     }
 
@@ -120,7 +121,7 @@ contract PuppyRaffle is ERC721, Ownable {
             }
         }
         //q why return zero if player not found? At index 0 it could be an active player
-        // @audit if the player is at index 0, it'll return 0 and a player might think they are not active!
+        // @audit if the player is at index 0 it'll return 0 and a player might think they are not active!
         return 0;
     }
 
@@ -203,10 +204,15 @@ contract PuppyRaffle is ERC721, Ownable {
     /// @param newFeeAddress the new address to send fees to
     function changeFeeAddress(address newFeeAddress) external onlyOwner {
         feeAddress = newFeeAddress;
+        // @audit are we missing events?
         emit FeeAddressChanged(newFeeAddress);
     }
 
     /// @notice this function will return true if the msg.sender is an active player
+    // @audit this isn't used anywhere?
+    // IMPACT: None
+    // LIKELIHOOD: None
+    // ... but it's a waste of gas I/G
     function _isActivePlayer() internal view returns (bool) {
         for (uint256 i = 0; i < players.length; i++) {
             if (players[i] == msg.sender) {
