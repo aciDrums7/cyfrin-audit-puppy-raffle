@@ -141,9 +141,14 @@ contract PuppyRaffle is ERC721, Ownable {
         uint256 winnerIndex =
             uint256(keccak256(abi.encodePacked(msg.sender, block.timestamp, block.difficulty))) % players.length;
         address winner = players[winnerIndex];
+
+        //? why not just do address(this).balance?
         uint256 totalAmountCollected = players.length * entranceFee;
+        //? is the 80% correct?
         uint256 prizePool = (totalAmountCollected * 80) / 100;
         uint256 fee = (totalAmountCollected * 20) / 100;
+        //1 this is the total fees the owner should be able to collect
+        //3 @audit overflow
         totalFees = totalFees + uint64(fee);
 
         uint256 tokenId = totalSupply();

