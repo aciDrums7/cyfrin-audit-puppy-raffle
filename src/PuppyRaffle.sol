@@ -80,13 +80,13 @@ contract PuppyRaffle is ERC721, Ownable {
         //? did custom reverts exist in 0.7.6 solidity?
         //? what if 0?
         require(msg.value == entranceFee * newPlayers.length, "PuppyRaffle: Must send enough to enter raffle");
-        //3 @audit no check for address(0)
+        // @audit no check for address(0)
         for (uint256 i = 0; i < newPlayers.length; i++) {
             players.push(newPlayers[i]);
         }
 
         // Check for duplicates
-        //3 @audit Dos
+        // @audit Dos
         for (uint256 i = 0; i < players.length - 1; i++) {
             for (uint256 j = i + 1; j < players.length; j++) {
                 require(players[i] != players[j], "PuppyRaffle: Duplicate player");
@@ -98,12 +98,12 @@ contract PuppyRaffle is ERC721, Ownable {
     /// @param playerIndex the index of the player to refund. You can find it externally by calling `getActivePlayerIndex`
     /// @dev This function will allow there to be blank spots in the array
     function refund(uint256 playerIndex) public {
-        //3 @audit MEV
+        // @audit MEV
         address playerAddress = players[playerIndex];
         require(playerAddress == msg.sender, "PuppyRaffle: Only the player can refund");
         require(playerAddress != address(0), "PuppyRaffle: Player already refunded, or is not active");
 
-        //3 @audit reentrancy
+        // @audit reentrancy
         payable(msg.sender).sendValue(entranceFee);
 
         players[playerIndex] = address(0);
@@ -120,7 +120,7 @@ contract PuppyRaffle is ERC721, Ownable {
             }
         }
         //? why return zero if player not found? At index 0 it could be an active player
-        //3 @audit if the player is at index 0, it'll return 0 and a player might think they are not active!
+        // @audit if the player is at index 0, it'll return 0 and a player might think they are not active!
         return 0;
     }
 
@@ -136,8 +136,8 @@ contract PuppyRaffle is ERC721, Ownable {
         require(block.timestamp >= raffleStartTime + raffleDuration, "PuppyRaffle: Raffle not over");
         require(players.length >= 4, "PuppyRaffle: Need at least 4 players");
 
-        //3 @audit randomness
-        //3 fixes: Chainlink VRF, Commit Reveal Scheme
+        // @audit randomness
+        // fixes: Chainlink VRF, Commit Reveal Scheme
         uint256 winnerIndex =
             uint256(keccak256(abi.encodePacked(msg.sender, block.timestamp, block.difficulty))) % players.length;
         address winner = players[winnerIndex];
@@ -148,8 +148,12 @@ contract PuppyRaffle is ERC721, Ownable {
         uint256 prizePool = (totalAmountCollected * 80) / 100;
         uint256 fee = (totalAmountCollected * 20) / 100;
         //1 this is the total fees the owner should be able to collect
-        //3 @audit overflow
-        //3 Fixes: Newer version of solidity, bigger uints
+        // @audit overflow
+        // Fixes: Newer version of solidity, bigger uints
+        // 18.446744073709551615
+        // 20.000000000000000000 uint256
+        // 1.553255926290448384 uint64
+        // @audit
         totalFees = totalFees + uint64(fee);
 
         uint256 tokenId = totalSupply();
