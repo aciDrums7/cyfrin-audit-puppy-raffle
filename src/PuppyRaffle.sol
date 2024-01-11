@@ -40,21 +40,21 @@ contract PuppyRaffle is ERC721, Ownable {
     mapping(uint256 => string) public rarityToName;
 
     // Stats for the common puppy (pug)
-    // @audit-gas should be constant!
+    // @reported should be constant!
     string private commonImageUri = "ipfs://QmSsYRx3LpDAb1GZQm7zZ1AuHZjfbPkD6J7s9r41xu1mf8";
 
     uint256 public constant COMMON_RARITY = 70;
     string private constant COMMON = "common";
 
     // Stats for the rare puppy (st. bernard)
-    // @audit-gas should be constant!
+    // @reported should be constant!
     string private rareImageUri = "ipfs://QmUPjADFGEKmfohdTaNcWhp7VGk26h5jXDA7v3VtTnTLcW";
 
     uint256 public constant RARE_RARITY = 25;
     string private constant RARE = "rare";
 
     // Stats for the legendary puppy (shiba inu)
-    // @audit-gas should be constant!
+    // @reported should be constant!
     string private legendaryImageUri = "ipfs://QmYx6GsYAKnNzZ9A6NvEKV9nf1VaDzJrqDR23Y8YSkebLU";
 
     uint256 public constant LEGENDARY_RARITY = 5;
@@ -70,13 +70,12 @@ contract PuppyRaffle is ERC721, Ownable {
     /// @param _raffleDuration the duration in seconds of the raffle
     constructor(uint256 _entranceFee, address _feeAddress, uint256 _raffleDuration) ERC721("Puppy Raffle", "PR") {
         entranceFee = _entranceFee;
-        // @audit-info check for zero address
+        // @reported check for zero address
         //e input validation
         feeAddress = _feeAddress;
         raffleDuration = _raffleDuration;
         raffleStartTime = block.timestamp;
 
-        // @audit-gas should be constant!
         rarityToUri[COMMON_RARITY] = commonImageUri;
         rarityToUri[RARE_RARITY] = rareImageUri;
         rarityToUri[LEGENDARY_RARITY] = legendaryImageUri;

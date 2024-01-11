@@ -110,7 +110,7 @@ function test_EnterRaffleDenialOfService() public {
 
 Consider using a specific version of Solidity in your contracts instead of a wide version. For example, instead of `pragma solidity ^0.8.0;`, use `pragma solidity 0.8.0;`
 
-- Found in src/PuppyRaffle.sol [Line: 2](src/PuppyRaffle.sol#L2)
+- Found in src/PuppyRaffle.sol [Line: 2](../src/PuppyRaffle.sol#L2)
 
 	```solidity
 	pragma solidity ^0.7.6;
@@ -133,7 +133,31 @@ Risks of new language features
 Risks of known bugs
 Use a simple pragma version that allows any of these versions. Consider using the latest version of Solidity for testing.
 
-Please see [slither](https://github.com/crytic/slither/wiki/Detector-Documentation#incorrect-versions-of-solidity) documentation for more information. <br> <br>
+Please see [slither](https://github.com/crytic/slither/wiki/Detector-Documentation#incorrect-versions-of-solidity) documentation for more information. 
+
+
+
+## [I-3]: Missing checks for `address(0)` when assigning values to address state variables
+
+Assigning values to address state variables without checking for `address(0)`.
+
+- Found in src/PuppyRaffle.sol [Line: 69](../src/PuppyRaffle.sol#L69)
+
+	```solidity
+	        feeAddress = _feeAddress;
+	```
+
+- Found in src/PuppyRaffle.sol [Line: 193](../src/PuppyRaffle.sol#L193)
+
+	```solidity
+	        previousWinner = winner; //e vanity, doesn't matter much
+	```
+
+- Found in src/PuppyRaffle.sol [Line: 217](../src/PuppyRaffle.sol#L217)
+
+	```solidity
+	        feeAddress = newFeeAddress;
+	``
 
 
 
