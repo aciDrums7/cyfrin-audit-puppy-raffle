@@ -103,3 +103,15 @@ function test_EnterRaffleDenialOfService() public {
 ```
 
 3. Alternatively, you could use [Openzeppelin's `EnumberableSet` library](https://docs.openzeppelin.com/contracts/4.x/api/utils#EnumerableSet).
+
+
+
+### [I-1]: Solidity pragma should be specific, not wide
+
+Consider using a specific version of Solidity in your contracts instead of a wide version. For example, instead of `pragma solidity ^0.8.0;`, use `pragma solidity 0.8.0;`
+
+- Found in src/PuppyRaffle.sol [Line: 2](src/PuppyRaffle.sol#L2)
+
+	```solidity
+	pragma solidity ^0.7.6;
+	```
