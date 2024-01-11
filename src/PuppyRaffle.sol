@@ -91,15 +91,14 @@ contract PuppyRaffle is ERC721, Ownable {
     /// @param newPlayers the list of players to enter the raffle
     function enterRaffle(address[] memory newPlayers) public payable {
         require(msg.value == entranceFee * newPlayers.length, "PuppyRaffle: Must send enough to enter raffle");
-        // @audit no check for address(0)
+        // @reported no check for address(0)
         for (uint256 i = 0; i < newPlayers.length; i++) {
-            // @audit / followup if it's an empty array, we still emit an event?
             players.push(newPlayers[i]);
         }
 
         // Check for duplicates
-        // @audit Dos
-        // @audit-gas uint256 playerLength = players.length;
+        // @reported Dos
+        // @reported uint256 playerLength = players.length;
         for (uint256 i = 0; i < players.length - 1; i++) {
             for (uint256 j = i + 1; j < players.length; j++) {
                 require(players[i] != players[j], "PuppyRaffle: Duplicate player");

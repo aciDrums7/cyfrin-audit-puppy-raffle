@@ -172,3 +172,18 @@ Instances:
 - `PuppyRaffle::commonImageUri` should be `constant`
 - `PuppyRaffle::rareImageUri` should be `constant`
 - `PuppyRaffle::legendaryImageUri` should be `constant`
+
+## [G-2] Storage variable in a loop should be cached
+
+Everytime you call `players.length` you read from storage, as opposed to memory which is more gas efficient.
+
+```diff
++       uint256 playerLength = players.length;
+-       for (uint256 i = 0; i < players.length - 1; i++) {
++       for (uint256 i = 0; i < playerLength - 1; i++) {    
+-           for (uint256 j = i + 1; j < players.length; j++) {
++           for (uint256 j = i + 1; j < playerLength; j++) {
+                require(players[i] != players[j], "PuppyRaffle: Duplicate player");
+            }
+        }
+```
