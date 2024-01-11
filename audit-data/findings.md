@@ -1,4 +1,4 @@
-### [M-#] Looping through players array to check for duplicates in `PuppyRaffle::enterRaffle` is a potential Denial of Service (DoS) attack, incrementing gas cost for future entrants
+## [M-#] Looping through players array to check for duplicates in `PuppyRaffle::enterRaffle` is a potential Denial of Service (DoS) attack, incrementing gas cost for future entrants
 
 <!-- IMPACT: MEDIUM -->
 <!-- LIKELIHOOD: MEDIUM -->
@@ -102,11 +102,11 @@ function test_EnterRaffleDenialOfService() public {
     }
 ```
 
-3. Alternatively, you could use [Openzeppelin's `EnumberableSet` library](https://docs.openzeppelin.com/contracts/4.x/api/utils#EnumerableSet).
+1. Alternatively, you could use [Openzeppelin's `EnumberableSet` library](https://docs.openzeppelin.com/contracts/4.x/api/utils#EnumerableSet).
 
 
 
-### [I-1]: Solidity pragma should be specific, not wide
+## [I-1]: Solidity pragma should be specific, not wide
 
 Consider using a specific version of Solidity in your contracts instead of a wide version. For example, instead of `pragma solidity ^0.8.0;`, use `pragma solidity 0.8.0;`
 
@@ -118,7 +118,7 @@ Consider using a specific version of Solidity in your contracts instead of a wid
 
 
 
-### [I-2]: Using an outdated version of Solidity is not recommended.
+## [I-2]: Using an outdated version of Solidity is not recommended.
 
 solc frequently releases new compiler versions. Using an old version prevents access to new Solidity security checks. We also recommend avoiding complex pragma statement.
 
@@ -133,4 +133,18 @@ Risks of new language features
 Risks of known bugs
 Use a simple pragma version that allows any of these versions. Consider using the latest version of Solidity for testing.
 
-Please see [slither](https://github.com/crytic/slither/wiki/Detector-Documentation#incorrect-versions-of-solidity) documentation for more information. 
+Please see [slither](https://github.com/crytic/slither/wiki/Detector-Documentation#incorrect-versions-of-solidity) documentation for more information. <br> <br>
+
+
+
+# Gas
+
+## [G-1] Unchanged state variables should be declared constant or immutable.
+
+Reading from storage is muhc more expensive than reading from a constant or immutable variable.
+
+Instances:
+- `PuppyRaffle::raffleDuration` should be `immutable`
+- `PuppyRaffle::commonImageUri` should be `constant`
+- `PuppyRaffle::rareImageUri` should be `constant`
+- `PuppyRaffle::legendaryImageUri` should be `constant`
