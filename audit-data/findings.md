@@ -123,7 +123,26 @@ function refund(uint256 playerIndex) public {
 -       emit RaffleRefunded(playerAddress);
     }
 ```
-<br>
+
+<!-- ! IN A COMPETITIVE AUDIT, THIS COULD BE SENT AS 2 SEPARATE FINDINGS -> SAME ROOT CAUSE == SAME SUBMISSION == LESS MONEY -->
+## [H-2] Weak randomness in `PuppyRaffle::selectWinner` function allows users to influence or predict the winner and influence or predict the winning puppy
+
+**Description:** Hashing `msg.sender`, `block.timestamp` and `block.difficulty` together creates a predictable find number. A predictable number is not a good random number. Malicious users can manipulate these values or know them ahead of time to choose the winner of the raffle themselves.
+
+*Note:* This additionally means users could front-run this function and call `refund` if they see they are not the winner.
+
+**Impact:** Any user can influence the winner of the raffle, winning the money and selecting the `rarest` puppy. Making the entire raffle worthless if it becomes a gas war as to who wins the raffles.
+
+**Proof of Concept:**
+
+1. Validators can know ahead of time the `block.timestamp` and `block.difficulty` and use that to predict when/how to partecipate. See the [solidity blog on prevrandao](https://soliditydeveloper.com/prevrandao). `block.difficulty` was recently replaced with prevrandao.
+2. User can mine/manipulate their `msg.sender` value to result in their address being used to generate the winner!
+3. Users can revert their `selectWinner` transaction if they don't like the winner or resulting puppy.
+
+Using on-chain values as randomness seed is a [well-documented attack vector](https://betterprogramming.pub/how-to-generate-truly-random-numbers-in-solidity-and-blockchain-9ced6472dbdf)
+
+**Recommended Mitigation:** Consider using a cryptographically provable random number generator such as Chainlink VRF.
+
 
 # Medium
 
@@ -191,7 +210,7 @@ function test_EnterRaffleDenialOfService() public {
         assert(gasUsedFirst < gasEndSecond);
     }
 ```
-</details><br>
+</details>
 
 **Recommended Mitigation:** There are a few recommendations.
 
@@ -233,7 +252,7 @@ function test_EnterRaffleDenialOfService() public {
 
 1. Alternatively, you could use [Openzeppelin's `EnumberableSet` library](https://docs.openzeppelin.com/contracts/4.x/api/utils#EnumerableSet).
 
-<br>
+
 
 # Low
 
@@ -264,7 +283,7 @@ function test_EnterRaffleDenialOfService() public {
 
 You could also reserve the 0th position for any competition, but a better solution might be to return an `int256` where the function returns -1 if the player is not active.
 
-<br>
+
 
 # Informational
 

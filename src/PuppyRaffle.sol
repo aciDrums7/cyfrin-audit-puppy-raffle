@@ -155,8 +155,10 @@ contract PuppyRaffle is ERC721, Ownable {
         require(block.timestamp >= raffleStartTime + raffleDuration, "PuppyRaffle: Raffle not over");
         require(players.length >= 4, "PuppyRaffle: Need at least 4 players");
 
-        // @audit randomness
+        // @reported randomness
         // fixes: Chainlink VRF, Commit Reveal Scheme
+        // IMPACT: HIGH
+        // LIKELIHOOD: HIGH
         uint256 winnerIndex =
             uint256(keccak256(abi.encodePacked(msg.sender, block.timestamp, block.difficulty))) % players.length;
         address winner = players[winnerIndex];
