@@ -218,12 +218,12 @@ contract PuppyRaffle is ERC721, Ownable {
     /// @param newFeeAddress the new address to send fees to
     function changeFeeAddress(address newFeeAddress) external onlyOwner {
         feeAddress = newFeeAddress;
-        // @audit are we missing events?
+        // @reported are we missing events?
         emit FeeAddressChanged(newFeeAddress);
     }
 
     /// @notice this function will return true if the msg.sender is an active player
-    // @audit this isn't used anywhere?
+    // @reported this isn't used anywhere?
     // IMPACT: None
     // LIKELIHOOD: None
     // ... but it's a waste of gas I/G

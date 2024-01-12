@@ -440,7 +440,6 @@ In this way, the `PuppyRaffle::withdrawFees` function can be called when the ETH
 **Description:** The `PuppyRaffle::enterRaffle` function loops through the `players` array to check for duplicates. However, the longer the `players` array is, the more checks a new player will have to make. This means the gas costs for players who enter right when the raffle starts will be dramatically lower than those who enter later. Every additional address in the `players` array, is an additional check the loop will have to make. 
 
 ```javascript
- // @audit DoS attack
 @>      for (uint256 i = 0; i < players.length - 1; i++) {
             for (uint256 j = i + 1; j < players.length; j++) {
                 require(players[i] != players[j], "PuppyRaffle: Duplicate player");
@@ -677,7 +676,24 @@ Instead, you could use:
     uint256 public constant FEE_PERCENTAGE = 20;
     uint256 public constant POOL_PRECISION = 100;
 ```
- 
+
+
+
+## [I-6] Missing `WinnerSelected`/`FeesWithdrawn` event emition in `PuppyRaffle::selectWinner`/`PuppyRaffle::withdrawFees` methods
+
+### Summary
+
+Events for critical state changes (e.g. owner and other critical parameters like a winner selection or the fees withdrawn) should be emitted for tracking this off-chain
+
+### Recommendations
+
+Add a WinnerSelected event that takes as parameter the currentWinner and the minted token id and emit this event in `PuppyRaffle::selectWinner` right after the call to [`_safeMint_`](https://github.com/Cyfrin/2023-10-Puppy-Raffle/blob/07399f4d02520a2abf6f462c024842e495ca82e4/src/PuppyRaffle.sol#L153)
+
+Add a FeesWithdrawn event that takes as parameter the amount withdrawn and emit this event in `PuppyRaffle::withdrawFees` right at the end of [the method](https://github.com/Cyfrin/2023-10-Puppy-Raffle/blob/07399f4d02520a2abf6f462c024842e495ca82e4/src/PuppyRaffle.sol#L162)
+
+
+## [I-7] `PuppyRaffle::_isActivePlayer` is never used and should be removed
+
 
 
 # Gas
