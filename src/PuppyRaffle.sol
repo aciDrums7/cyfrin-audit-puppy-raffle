@@ -111,7 +111,7 @@ contract PuppyRaffle is ERC721, Ownable {
     /// @param playerIndex the index of the player to refund. You can find it externally by calling `getActivePlayerIndex`
     /// @dev This function will allow there to be blank spots in the array
     function refund(uint256 playerIndex) public {
-        // @audit MEV
+        // @skipped MEV
         address playerAddress = players[playerIndex];
         require(playerAddress == msg.sender, "PuppyRaffle: Only the player can refund");
         require(playerAddress != address(0), "PuppyRaffle: Player already refunded, or is not active");
@@ -163,7 +163,7 @@ contract PuppyRaffle is ERC721, Ownable {
             uint256(keccak256(abi.encodePacked(msg.sender, block.timestamp, block.difficulty))) % players.length;
         address winner = players[winnerIndex];
 
-        // @audit-info why not just do address(this).balance?
+        //q why not just do address(this).balance?
         uint256 totalAmountCollected = players.length * entranceFee;
 
         // @reported magic numbers
@@ -204,8 +204,8 @@ contract PuppyRaffle is ERC721, Ownable {
     /// @notice this function will withdraw the fees to the feeAddress
     function withdrawFees() external {
         //e this condition is true when selectWinner() has been called successfully
-        // @audit it is difficult to withdraw fees if there are players (MEV)
-        // @audit mishandling ETH, selfdestruct possible
+        // @skipped it is difficult to withdraw fees if there are players (MEV)
+        // @reported mishandling ETH, selfdestruct possible
         require(address(this).balance == uint256(totalFees), "PuppyRaffle: There are currently players active!");
         uint256 feesToWithdraw = totalFees;
         totalFees = 0;
