@@ -140,7 +140,7 @@ contract PuppyRaffle is ERC721, Ownable {
                 return i;
             }
         }
-        // @audit if the player is at index 0 it'll return 0 and a player might think they are not active!
+        // @reported if the player is at index 0 it'll return 0 and a player might think they are not active!
         return 0;
     }
 
@@ -151,7 +151,7 @@ contract PuppyRaffle is ERC721, Ownable {
     /// @dev we reset the active players array after the winner is selected
     /// @dev we send 80% of the funds to the winner, the other 20% goes to the feeAddress
     function selectWinner() external {
-        // @audit-info recommend to follow CEI
+        // @reported recommend to follow CEI
         require(block.timestamp >= raffleStartTime + raffleDuration, "PuppyRaffle: Raffle not over");
         require(players.length >= 4, "PuppyRaffle: Need at least 4 players");
 
