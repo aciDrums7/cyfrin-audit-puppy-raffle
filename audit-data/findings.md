@@ -126,8 +126,8 @@ function refund(uint256 playerIndex) public {
 
 
 
-<!-- ! IN A COMPETITIVE AUDIT, THIS COULD BE SENT AS 2 SEPARATE FINDINGS -> SAME ROOT CAUSE == SAME SUBMISSION == LESS MONEY -->
 ## [H-2] Weak randomness in `PuppyRaffle::selectWinner` function allows users to influence or predict the winner and influence or predict the winning puppy
+<!-- ! IN A COMPETITIVE AUDIT, THIS COULD BE SENT AS 2 SEPARATE FINDINGS -> SAME ROOT CAUSE == SAME SUBMISSION == LESS MONEY -->
 
 **Description:** Hashing `msg.sender`, `block.timestamp` and `block.difficulty` together creates a predictable find number. A predictable number is not a good random number. Malicious users can manipulate these values or know them ahead of time to choose the winner of the raffle themselves.
 
@@ -170,7 +170,7 @@ uint256 entranceFee = 1e18;
 
 totalFees = totalFees + uint64(fee);
 // aka
-totalFees = 8e17 + 89e18;
+totalFees = 0.8e18 + 17.8e18;
 // and this will overflow!
 Expected fees: 18.6e18
 Actual fees: 1.53255926290448384e17 
@@ -240,18 +240,124 @@ Althought you could use `selfdestruct` to send ETH to this contract in order for
 
 1. Use a newer version of solidity, and a `uint256` instead of `uint64` for `PuppyRaffle::totalFees`
 2. You could also use the `SafeMath` library of OpenZeppelin for version 0.7.6 of solidity, however you would still have a hard time with the `uint64` type if too many fees are collected.
-3. Remove the balance check from `PuppyRaffle::withdrawFees`:
+3. Additionally, remove the balance check from `PuppyRaffle::withdrawFees`:
 ```diff
 - require(address(this).balance == uint256(totalFees), "PuppyRaffle: There are currently players active!");
 ```
 There are more attack vectors with that final require, so we recommend removing it regardless.
 
-4. Change the balance check from `PuppyRaffle::withdrawFees`:  
+4. Or, instead of removing it, change the balance check from `PuppyRaffle::withdrawFees` to be greater then or equal instead of strictly equal:  
 ```diff
 - require(address(this).balance == uint256(totalFees), "PuppyRaffle: There are currently players active!");
 + require(address(this).balance >= uint256(totalFees), "PuppyRaffle: There are currently players active!");
 ```
 
+
+
+## [H-4] Unsafe typecasting from `uint256` to `uint64` in `PuppyRaffle::selectWinner` function when calculating the `totalFees` value, causing a loss of fees
+
+**Description:** if the value casted from `uint256` to `uint64` exceeds the maximum value of a `uint64`, the casting will result in a loss of precision, causing a wrong result for the `totalFees` value.
+
+```javascript
+uint256 myVar = type(uint64).max + 1
+// 18446744073709551616
+uint64 myVarCasted = uint64(myVar)
+// myVarCasted will be 0
+```
+
+**Impact:** In `PuppyRaffle::selectWinner`, `totalFees` are accumulated for the `feeAddress` to collect later in `PuppyRaffle::withdrawFees` function. However, since `totalFees = totalFees + uint64(fee)`, if casting `fee` to a `uint64` causes a loss of precision, the final value of `totalFees` will be wrong and the `feeAddress` may not collect the correct amount of fees, leaving fees permanently stuck in the contract because of the `require` condition at the beginning of `PuppyRaffle::withdrawFees`.
+
+**Proof of Concept:**
+1. We conclude a raffle of 4 players
+2. We then have 93 players enter a new raffle, and conclude it
+3. `totalFees` will be:
+```javascript
+// This value is taken from `PuppyRaffleTest`
+uint256 entranceFee = 1e18;
+
+uint256 fee = (93e18 * 20) / 100;
+// aka
+uint256 fee = 18.6e18;
+// typecasting this number will result in a loss of precision
+totalFees = totalFees + uint64(fee);
+// aka
+totalFees = 0.8e18 + 1.53255926290448384e17;
+
+Expected fees: 19.4e18
+Actual fees: 9.53255926290448384e17 
+```
+
+<details>
+<summary>Code</summary>
+
+```javascript
+modifier playersEntered() {
+        address[] memory players = new address[](4);
+        players[0] = playerOne;
+        players[1] = playerTwo;
+        players[2] = playerThree;
+        players[3] = playerFour;
+        puppyRaffle.enterRaffle{value: entranceFee * 4}(players);
+        _;
+    }
+
+function test_SelectWinnerOverflow() public playersEntered {
+    // calling the first time selectWinner
+    vm.warp(block.timestamp + puppyRaffle.raffleStartTime() + puppyRaffle.raffleDuration());
+    vm.roll(block.number + 1);
+    vm.prank(playerOne);
+    puppyRaffle.selectWinner();
+
+    // players needed for the uint64 overflow
+    uint256 numPlayersToOverflow = 93;
+    address[] memory players = new address[](numPlayersToOverflow);
+    for (uint256 i = 0; i < players.length; i++) {
+        players[i] = address(i + 1);
+    }
+
+    uint256 expectedFees = (players.length * entranceFee * 20) / 100;
+
+    // entering Raffle
+    hoax(playerOne, players.length * entranceFee);
+    puppyRaffle.enterRaffle{value: players.length * entranceFee}(players);
+
+    // calling selectWinner to update totalFees
+    vm.warp(block.timestamp + puppyRaffle.raffleStartTime() + puppyRaffle.raffleDuration());
+    vm.roll(block.number + 1);
+    puppyRaffle.selectWinner();
+
+    console.log("Expected fees", expectedFees);
+    console.log("Actual fees:", puppyRaffle.totalFees());
+
+    // if true -> totalFees overflowed
+    assert(puppyRaffle.totalFees() < expectedFees);
+
+    // We are also unable to withdraw fees because of the require check
+    vm.prank(puppyRaffle.feeAddress());
+    vm.expectRevert("PuppyRaffle: There are currently players active!");
+    puppyRaffle.withdrawFees();
+}
+```
+4. You will not be able to withdraw, due to the line in `PuppyRaffle::withdrawFees`:
+```javascript
+require(address(this).balance == uint256(totalFees), "PuppyRaffle: There are currently players active!");
+```
+
+**Recommended Mitigation:** There are a few possible mitigations.
+
+1. Use a newer version of solidity, and a `uint256` instead of `uint64` for `PuppyRaffle::totalFees`, so it will be not more needed to typecast the `fee` variable to `uint64` 
+2. You could also use the `SafeMath` library of OpenZeppelin for version 0.7.6 of solidity, however you would still have a hard time with the `uint64` type if too many fees are collected.
+3. Additionally, remove the balance check from `PuppyRaffle::withdrawFees`:
+```diff
+- require(address(this).balance == uint256(totalFees), "PuppyRaffle: There are currently players active!");
+```
+There are more attack vectors with that final require, so we recommend removing it regardless.
+
+4. Or, instead of removing it, change the balance check from `PuppyRaffle::withdrawFees` to be greater then or equal instead of strictly equal:  
+```diff
+- require(address(this).balance == uint256(totalFees), "PuppyRaffle: There are currently players active!");
++ require(address(this).balance >= uint256(totalFees), "PuppyRaffle: There are currently players active!");
+```
 
 # Medium
 

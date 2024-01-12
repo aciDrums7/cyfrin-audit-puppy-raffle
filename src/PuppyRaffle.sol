@@ -171,7 +171,7 @@ contract PuppyRaffle is ERC721, Ownable {
         uint256 fee = (totalAmountCollected * 20) / 100;
         // @reported overflow
         // Fixes: Newer version of solidity, bigger uints
-        // @audit unsafe cast of uint256 to uint64
+        // @reported unsafe cast of uint256 to uint64
         // 18.446744073709551615
         // 20.000000000000000000 uint256
         // 1.553255926290448384 uint64
