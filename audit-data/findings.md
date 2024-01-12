@@ -124,6 +124,8 @@ function refund(uint256 playerIndex) public {
     }
 ```
 
+
+
 <!-- ! IN A COMPETITIVE AUDIT, THIS COULD BE SENT AS 2 SEPARATE FINDINGS -> SAME ROOT CAUSE == SAME SUBMISSION == LESS MONEY -->
 ## [H-2] Weak randomness in `PuppyRaffle::selectWinner` function allows users to influence or predict the winner and influence or predict the winning puppy
 
@@ -144,9 +146,116 @@ Using on-chain values as randomness seed is a [well-documented attack vector](ht
 **Recommended Mitigation:** Consider using a cryptographically provable random number generator such as Chainlink VRF.
 
 
+
+## [H-3] Integer overflow in `PuppyRaffle::selectWinner` function when calculating the `totalFees` value, causing a loss of fees
+
+**Description:** In solidity versions prior to `0.8.0` integers were subject to integer overflows.
+
+```javascript
+uint64 myVar = type(uint64).max
+// 18446744073709551615
+myVar = myVar + 1
+// myVar will be 0
+```
+
+**Impact:** In `PuppyRaffle::selectWinner`, `totalFees` are accumulated for the `feeAddress` to collect later in `PuppyRaffle::withdrawFees` function. However, if the `totalFees` variable overflows, the `feeAddress` may not collect the correct amount of fees, leaving fees permanently stuck in the contract.
+
+**Proof of Concept:**
+1. We conclude a raffle of 4 players
+2. We then have 89 players enter a new raffle, and conclude it
+3. `totalFees` will be:
+```javascript
+// This value is taken from `PuppyRaffleTest`
+uint256 entranceFee = 1e18;
+
+totalFees = totalFees + uint64(fee);
+// aka
+totalFees = 8e17 + 89e18;
+// and this will overflow!
+Expected fees: 18.6e18
+Actual fees: 1.53255926290448384e17 
+```
+
+<details>
+<summary>Code</summary>
+
+```javascript
+modifier playersEntered() {
+        address[] memory players = new address[](4);
+        players[0] = playerOne;
+        players[1] = playerTwo;
+        players[2] = playerThree;
+        players[3] = playerFour;
+        puppyRaffle.enterRaffle{value: entranceFee * 4}(players);
+        _;
+    }
+
+function test_SelectWinnerOverflow() public playersEntered {
+    // calling the first time selectWinner
+    vm.warp(block.timestamp + puppyRaffle.raffleStartTime() + puppyRaffle.raffleDuration());
+    vm.roll(block.number + 1);
+    vm.prank(playerOne);
+    puppyRaffle.selectWinner();
+
+    // players needed for the uint64 overflow
+    uint256 numPlayersToOverflow = 89;
+    address[] memory players = new address[](numPlayersToOverflow);
+    for (uint256 i = 0; i < players.length; i++) {
+        players[i] = address(i + 1);
+    }
+
+    uint256 expectedFees = (players.length * entranceFee * 20) / 100;
+
+    // entering Raffle
+    hoax(playerOne, players.length * entranceFee);
+    puppyRaffle.enterRaffle{value: players.length * entranceFee}(players);
+
+    // calling selectWinner to update totalFees
+    vm.warp(block.timestamp + puppyRaffle.raffleStartTime() + puppyRaffle.raffleDuration());
+    vm.roll(block.number + 1);
+    puppyRaffle.selectWinner();
+
+    console.log("Expected fees", expectedFees);
+    console.log("Actual fees:", puppyRaffle.totalFees());
+
+    // if true -> totalFees overflowed
+    assert(puppyRaffle.totalFees() < expectedFees);
+
+    // We are also unable to withdraw fees because of the require check
+    vm.prank(puppyRaffle.feeAddress());
+    vm.expectRevert("PuppyRaffle: There are currently players active!");
+    puppyRaffle.withdrawFees();
+}
+```
+4. You will not be able to withdraw, due to the line in `PuppyRaffle::withdrawFees`:
+```javascript
+require(address(this).balance == uint256(totalFees), "PuppyRaffle: There are currently players active!");
+```
+
+Althought you could use `selfdestruct` to send ETH to this contract in order for the values to match and withdraw the fees, this is clerly not the intended design of the protocol. At some point, there will be too much `balance` in the contract that the above `require` will be impossible to hit.
+
+</details>
+
+**Recommended Mitigation:** There are a few possible mitigations.
+
+1. Use a newer version of solidity, and a `uint256` instead of `uint64` for `PuppyRaffle::totalFees`
+2. You could also use the `SafeMath` library of OpenZeppelin for version 0.7.6 of solidity, however you would still have a hard time with the `uint64` type if too many fees are collected.
+3. Remove the balance check from `PuppyRaffle::withdrawFees`:
+```diff
+- require(address(this).balance == uint256(totalFees), "PuppyRaffle: There are currently players active!");
+```
+There are more attack vectors with that final require, so we recommend removing it regardless.
+
+4. Change the balance check from `PuppyRaffle::withdrawFees`:  
+```diff
+- require(address(this).balance == uint256(totalFees), "PuppyRaffle: There are currently players active!");
++ require(address(this).balance >= uint256(totalFees), "PuppyRaffle: There are currently players active!");
+```
+
+
 # Medium
 
-## [M-#] Looping through players array to check for duplicates in `PuppyRaffle::enterRaffle` is a potential Denial of Service (DoS) attack, incrementing gas cost for future entrants
+## [M-1] Looping through players array to check for duplicates in `PuppyRaffle::enterRaffle` is a potential Denial of Service (DoS) attack, incrementing gas cost for future entrants
 
 <!-- IMPACT: MEDIUM -->
 <!-- LIKELIHOOD: MEDIUM -->
