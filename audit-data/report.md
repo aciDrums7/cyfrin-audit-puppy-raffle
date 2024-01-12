@@ -20,7 +20,7 @@ header-includes:
     \vspace{2cm}
     {\Large\itshape Wisecrypt.io\par}
     \vfill
-    {\large \today\par}
+    {\large January 12, 2024\par}
 \end{titlepage}
 
 \maketitle
@@ -28,6 +28,7 @@ header-includes:
 <!-- Your report starts here! -->
 
 Prepared by: [Wisecrypt](https://github.com/aciDrums7)
+
 Lead Security Researcher: 
 - aciDrums7
 
