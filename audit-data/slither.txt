@@ -1,0 +1,159 @@
+'forge clean' running (wd: /Users/acidrums7/Documents/Coding/Web3/Courses/Cyfrin/04-Smart Contract Auditing, Assembly, Security, and DeFi Ultimate Course/4-cyfrin-audit-puppy-raffle)
+'forge build --build-info --skip */test/** */script/** --force' running (wd: /Users/acidrums7/Documents/Coding/Web3/Courses/Cyfrin/04-Smart Contract Auditing, Assembly, Security, and DeFi Ultimate Course/4-cyfrin-audit-puppy-raffle)
+INFO:Detectors:
+PuppyRaffle.selectWinner() (src/PuppyRaffle.sol#153-202) uses a weak PRNG: "winnerIndex = uint256(keccak256(bytes)(abi.encodePacked(msg.sender,block.timestamp,block.difficulty))) % players.length (src/PuppyRaffle.sol#162-163)" 
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#weak-PRNG
+INFO:Detectors:
+Base64.encode(bytes) (lib/base64/base64.sol#15-66) performs a multiplication on the result of a division:
+	- encodedLen = 4 * ((data.length + 2) / 3) (lib/base64/base64.sol#22)
+Base64.decode(string) (lib/base64/base64.sol#68-129) performs a multiplication on the result of a division:
+	- decodedLen = (data.length / 4) * 3 (lib/base64/base64.sol#78)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#divide-before-multiply
+INFO:Detectors:
+PuppyRaffle.withdrawFees() (src/PuppyRaffle.sol#205-215) uses a dangerous strict equality:
+	- require(bool,string)(address(this).balance == uint256(totalFees),PuppyRaffle: There are currently players active!) (src/PuppyRaffle.sol#209)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#dangerous-strict-equalities
+INFO:Detectors:
+Reentrancy in PuppyRaffle.refund(uint256) (src/PuppyRaffle.sol#113-128):
+	External calls:
+	- address(msg.sender).sendValue(entranceFee) (src/PuppyRaffle.sol#120)
+	State variables written after the call(s):
+	- players[playerIndex] = address(0) (src/PuppyRaffle.sol#122)
+	PuppyRaffle.players (src/PuppyRaffle.sol#25) can be used in cross function reentrancies:
+	- PuppyRaffle.enterRaffle(address[]) (src/PuppyRaffle.sol#92-109)
+	- PuppyRaffle.getActivePlayerIndex(address) (src/PuppyRaffle.sol#137-145)
+	- PuppyRaffle.players (src/PuppyRaffle.sol#25)
+	- PuppyRaffle.refund(uint256) (src/PuppyRaffle.sol#113-128)
+	- PuppyRaffle.selectWinner() (src/PuppyRaffle.sol#153-202)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-1
+INFO:Detectors:
+ERC721.tokenByIndex(uint256) (lib/openzeppelin-contracts/contracts/token/ERC721/ERC721.sol#180-183) ignores return value by (tokenId) = _tokenOwners.at(index) (lib/openzeppelin-contracts/contracts/token/ERC721/ERC721.sol#181)
+ERC721._mint(address,uint256) (lib/openzeppelin-contracts/contracts/token/ERC721/ERC721.sol#333-344) ignores return value by _holderTokens[to].add(tokenId) (lib/openzeppelin-contracts/contracts/token/ERC721/ERC721.sol#339)
+ERC721._mint(address,uint256) (lib/openzeppelin-contracts/contracts/token/ERC721/ERC721.sol#333-344) ignores return value by _tokenOwners.set(tokenId,to) (lib/openzeppelin-contracts/contracts/token/ERC721/ERC721.sol#341)
+ERC721._burn(uint256) (lib/openzeppelin-contracts/contracts/token/ERC721/ERC721.sol#356-374) ignores return value by _holderTokens[owner].remove(tokenId) (lib/openzeppelin-contracts/contracts/token/ERC721/ERC721.sol#369)
+ERC721._burn(uint256) (lib/openzeppelin-contracts/contracts/token/ERC721/ERC721.sol#356-374) ignores return value by _tokenOwners.remove(tokenId) (lib/openzeppelin-contracts/contracts/token/ERC721/ERC721.sol#371)
+ERC721._transfer(address,address,uint256) (lib/openzeppelin-contracts/contracts/token/ERC721/ERC721.sol#387-402) ignores return value by _holderTokens[from].remove(tokenId) (lib/openzeppelin-contracts/contracts/token/ERC721/ERC721.sol#396)
+ERC721._transfer(address,address,uint256) (lib/openzeppelin-contracts/contracts/token/ERC721/ERC721.sol#387-402) ignores return value by _holderTokens[to].add(tokenId) (lib/openzeppelin-contracts/contracts/token/ERC721/ERC721.sol#397)
+ERC721._transfer(address,address,uint256) (lib/openzeppelin-contracts/contracts/token/ERC721/ERC721.sol#387-402) ignores return value by _tokenOwners.set(tokenId,to) (lib/openzeppelin-contracts/contracts/token/ERC721/ERC721.sol#399)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#unused-return
+INFO:Detectors:
+PuppyRaffle.constructor(uint256,address,uint256)._feeAddress (src/PuppyRaffle.sol#71) lacks a zero-check on :
+		- feeAddress = _feeAddress (src/PuppyRaffle.sol#75)
+PuppyRaffle.changeFeeAddress(address).newFeeAddress (src/PuppyRaffle.sol#219) lacks a zero-check on :
+		- feeAddress = newFeeAddress (src/PuppyRaffle.sol#220)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#missing-zero-address-validation
+INFO:Detectors:
+Reentrancy in PuppyRaffle.refund(uint256) (src/PuppyRaffle.sol#113-128):
+	External calls:
+	- address(msg.sender).sendValue(entranceFee) (src/PuppyRaffle.sol#120)
+	Event emitted after the call(s):
+	- RaffleRefunded(playerAddress) (src/PuppyRaffle.sol#127)
+Reentrancy in PuppyRaffle.selectWinner() (src/PuppyRaffle.sol#153-202):
+	External calls:
+	- (success) = winner.call{value: prizePool}() (src/PuppyRaffle.sol#199)
+	- _safeMint(winner,tokenId) (src/PuppyRaffle.sol#201)
+		- returndata = to.functionCall(abi.encodeWithSelector(IERC721Receiver(to).onERC721Received.selector,_msgSender(),from,tokenId,_data),ERC721: transfer to non ERC721Receiver implementer) (lib/openzeppelin-contracts/contracts/token/ERC721/ERC721.sol#441-447)
+		- (success,returndata) = target.call{value: value}(data) (lib/openzeppelin-contracts/contracts/utils/Address.sol#119)
+	External calls sending eth:
+	- (success) = winner.call{value: prizePool}() (src/PuppyRaffle.sol#199)
+	- _safeMint(winner,tokenId) (src/PuppyRaffle.sol#201)
+		- (success,returndata) = target.call{value: value}(data) (lib/openzeppelin-contracts/contracts/utils/Address.sol#119)
+	Event emitted after the call(s):
+	- Transfer(address(0),to,tokenId) (lib/openzeppelin-contracts/contracts/token/ERC721/ERC721.sol#343)
+		- _safeMint(winner,tokenId) (src/PuppyRaffle.sol#201)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-3
+INFO:Detectors:
+PuppyRaffle.selectWinner() (src/PuppyRaffle.sol#153-202) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(block.timestamp >= raffleStartTime + raffleDuration,PuppyRaffle: Raffle not over) (src/PuppyRaffle.sol#155)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#block-timestamp
+INFO:Detectors:
+Base64.encode(bytes) (lib/base64/base64.sol#15-66) uses assembly
+	- INLINE ASM (lib/base64/base64.sol#27-63)
+Base64.decode(string) (lib/base64/base64.sol#68-129) uses assembly
+	- INLINE ASM (lib/base64/base64.sol#83-126)
+Address.isContract(address) (lib/openzeppelin-contracts/contracts/utils/Address.sol#26-35) uses assembly
+	- INLINE ASM (lib/openzeppelin-contracts/contracts/utils/Address.sol#33)
+Address._verifyCallResult(bool,bytes,string) (lib/openzeppelin-contracts/contracts/utils/Address.sol#171-188) uses assembly
+	- INLINE ASM (lib/openzeppelin-contracts/contracts/utils/Address.sol#180-183)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#assembly-usage
+INFO:Detectors:
+Different versions of Solidity are used:
+	- Version used: ['>=0.6.0', '>=0.6.0<0.8.0', '>=0.6.2<0.8.0', '^0.7.6']
+	- >=0.6.0 (lib/base64/base64.sol#3)
+	- >=0.6.0<0.8.0 (lib/openzeppelin-contracts/contracts/access/Ownable.sol#3)
+	- >=0.6.0<0.8.0 (lib/openzeppelin-contracts/contracts/introspection/ERC165.sol#3)
+	- >=0.6.0<0.8.0 (lib/openzeppelin-contracts/contracts/introspection/IERC165.sol#3)
+	- >=0.6.0<0.8.0 (lib/openzeppelin-contracts/contracts/math/SafeMath.sol#3)
+	- >=0.6.0<0.8.0 (lib/openzeppelin-contracts/contracts/token/ERC721/ERC721.sol#3)
+	- >=0.6.0<0.8.0 (lib/openzeppelin-contracts/contracts/token/ERC721/IERC721Receiver.sol#3)
+	- >=0.6.0<0.8.0 (lib/openzeppelin-contracts/contracts/utils/Context.sol#3)
+	- >=0.6.0<0.8.0 (lib/openzeppelin-contracts/contracts/utils/EnumerableMap.sol#3)
+	- >=0.6.0<0.8.0 (lib/openzeppelin-contracts/contracts/utils/EnumerableSet.sol#3)
+	- >=0.6.0<0.8.0 (lib/openzeppelin-contracts/contracts/utils/Strings.sol#3)
+	- >=0.6.2<0.8.0 (lib/openzeppelin-contracts/contracts/token/ERC721/IERC721.sol#3)
+	- >=0.6.2<0.8.0 (lib/openzeppelin-contracts/contracts/token/ERC721/IERC721Enumerable.sol#3)
+	- >=0.6.2<0.8.0 (lib/openzeppelin-contracts/contracts/token/ERC721/IERC721Metadata.sol#3)
+	- >=0.6.2<0.8.0 (lib/openzeppelin-contracts/contracts/utils/Address.sol#3)
+	- ^0.7.6 (src/PuppyRaffle.sol#2)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#different-pragma-directives-are-used
+INFO:Detectors:
+PuppyRaffle._isActivePlayer() (src/PuppyRaffle.sol#230-237) is never used and should be removed
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#dead-code
+INFO:Detectors:
+Pragma version>=0.6.0 (lib/base64/base64.sol#3) allows old versions
+Pragma version>=0.6.0<0.8.0 (lib/openzeppelin-contracts/contracts/access/Ownable.sol#3) is too complex
+Pragma version>=0.6.0<0.8.0 (lib/openzeppelin-contracts/contracts/introspection/ERC165.sol#3) is too complex
+Pragma version>=0.6.0<0.8.0 (lib/openzeppelin-contracts/contracts/introspection/IERC165.sol#3) is too complex
+Pragma version>=0.6.0<0.8.0 (lib/openzeppelin-contracts/contracts/math/SafeMath.sol#3) is too complex
+Pragma version>=0.6.0<0.8.0 (lib/openzeppelin-contracts/contracts/token/ERC721/ERC721.sol#3) is too complex
+Pragma version>=0.6.2<0.8.0 (lib/openzeppelin-contracts/contracts/token/ERC721/IERC721.sol#3) is too complex
+Pragma version>=0.6.2<0.8.0 (lib/openzeppelin-contracts/contracts/token/ERC721/IERC721Enumerable.sol#3) is too complex
+Pragma version>=0.6.2<0.8.0 (lib/openzeppelin-contracts/contracts/token/ERC721/IERC721Metadata.sol#3) is too complex
+Pragma version>=0.6.0<0.8.0 (lib/openzeppelin-contracts/contracts/token/ERC721/IERC721Receiver.sol#3) is too complex
+Pragma version>=0.6.2<0.8.0 (lib/openzeppelin-contracts/contracts/utils/Address.sol#3) is too complex
+Pragma version>=0.6.0<0.8.0 (lib/openzeppelin-contracts/contracts/utils/Context.sol#3) is too complex
+Pragma version>=0.6.0<0.8.0 (lib/openzeppelin-contracts/contracts/utils/EnumerableMap.sol#3) is too complex
+Pragma version>=0.6.0<0.8.0 (lib/openzeppelin-contracts/contracts/utils/EnumerableSet.sol#3) is too complex
+Pragma version>=0.6.0<0.8.0 (lib/openzeppelin-contracts/contracts/utils/Strings.sol#3) is too complex
+Pragma version^0.7.6 (src/PuppyRaffle.sol#2) allows old versions
+solc-0.7.6 is not recommended for deployment
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#incorrect-versions-of-solidity
+INFO:Detectors:
+Low level call in Address.sendValue(address,uint256) (lib/openzeppelin-contracts/contracts/utils/Address.sol#53-59):
+	- (success) = recipient.call{value: amount}() (lib/openzeppelin-contracts/contracts/utils/Address.sol#57)
+Low level call in Address.functionCallWithValue(address,bytes,uint256,string) (lib/openzeppelin-contracts/contracts/utils/Address.sol#114-121):
+	- (success,returndata) = target.call{value: value}(data) (lib/openzeppelin-contracts/contracts/utils/Address.sol#119)
+Low level call in Address.functionStaticCall(address,bytes,string) (lib/openzeppelin-contracts/contracts/utils/Address.sol#139-145):
+	- (success,returndata) = target.staticcall(data) (lib/openzeppelin-contracts/contracts/utils/Address.sol#143)
+Low level call in Address.functionDelegateCall(address,bytes,string) (lib/openzeppelin-contracts/contracts/utils/Address.sol#163-169):
+	- (success,returndata) = target.delegatecall(data) (lib/openzeppelin-contracts/contracts/utils/Address.sol#167)
+Low level call in PuppyRaffle.selectWinner() (src/PuppyRaffle.sol#153-202):
+	- (success) = winner.call{value: prizePool}() (src/PuppyRaffle.sol#199)
+Low level call in PuppyRaffle.withdrawFees() (src/PuppyRaffle.sol#205-215):
+	- (success) = feeAddress.call{value: feesToWithdraw}() (src/PuppyRaffle.sol#213)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#low-level-calls
+INFO:Detectors:
+Parameter Base64.decode(string)._data (lib/base64/base64.sol#68) is not in mixedCase
+Parameter ERC721.safeTransferFrom(address,address,uint256,bytes)._data (lib/openzeppelin-contracts/contracts/token/ERC721/ERC721.sol#245) is not in mixedCase
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#conformance-to-solidity-naming-conventions
+INFO:Detectors:
+Redundant expression "this (lib/openzeppelin-contracts/contracts/utils/Context.sol#21)" inContext (lib/openzeppelin-contracts/contracts/utils/Context.sol#15-24)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#redundant-statements
+INFO:Detectors:
+Variable Base64.TABLE_DECODE (lib/base64/base64.sol#10-13) is too similar to Base64.TABLE_ENCODE (lib/base64/base64.sol#9)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#variable-names-too-similar
+INFO:Detectors:
+Loop condition i < players.length (src/PuppyRaffle.sol#138) should use cached array length instead of referencing `length` member of the storage array.
+ Loop condition i < players.length (src/PuppyRaffle.sol#231) should use cached array length instead of referencing `length` member of the storage array.
+ Loop condition j < players.length (src/PuppyRaffle.sol#103) should use cached array length instead of referencing `length` member of the storage array.
+ Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#cache-array-length
+INFO:Detectors:
+PuppyRaffle.commonImageUri (src/PuppyRaffle.sol#44) should be constant 
+PuppyRaffle.legendaryImageUri (src/PuppyRaffle.sol#58) should be constant 
+PuppyRaffle.rareImageUri (src/PuppyRaffle.sol#51) should be constant 
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#state-variables-that-could-be-declared-constant
+INFO:Detectors:
+PuppyRaffle.raffleDuration (src/PuppyRaffle.sol#28) should be immutable 
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#state-variables-that-could-be-declared-immutable
+INFO:Slither:. analyzed (16 contracts with 93 detectors), 58 result(s) found
