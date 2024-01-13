@@ -1,6 +1,6 @@
 ---
 title: Puppy Raffle Initial Audit Report
-author: Wisecrypt
+author: Ethereal Audits
 date: January 12, 2024
 header-includes:
   - \usepackage{titling}
@@ -18,21 +18,23 @@ header-includes:
     \vspace{1cm}
     {\Large Version 0.1\par}
     \vspace{2cm}
-    {\Large\itshape Wisecrypt.io\par}
+    {\Large\itshape Ethereal Audits\par}
     \vfill
     {\large January 12, 2024\par}
 \end{titlepage}
 
 \maketitle
 
-<!-- Your report starts here! -->
+# Puppy Raffle Initial Audit Report
 
-Prepared by: [Wisecrypt](https://github.com/aciDrums7)
+Prepared by: [Ethereal Audits](https://github.com/aciDrums7)
 
 Lead Security Researcher: 
-- aciDrums7
+
+- [aciDrums7](https://github.com/aciDrums7)
 
 # Table of Contents
+- [Puppy Raffle Initial Audit Report](#puppy-raffle-initial-audit-report)
 - [Table of Contents](#table-of-contents)
 - [Protocol Summary](#protocol-summary)
 - [Disclaimer](#disclaimer)
@@ -81,16 +83,16 @@ The owner of the protocol will set a feeAddress to take a cut of the value, and 
 
 # Disclaimer
 
-The Wisecrypt team makes all effort to find as many vulnerabilities in the code in the given time period, but holds no responsibilities for the findings provided in this document. A security audit by the team is not an endorsement of the underlying business or product. The audit was time-boxed and the review of the code was solely on the security aspects of the Solidity implementation of the contracts.
+The Ethereal Audits team makes all effort to find as many vulnerabilities in the code in the given time period, but holds no responsibilities for the findings provided in this document. A security audit by the team is not an endorsement of the underlying business or product. The audit was time-boxed and the review of the code was solely on the security aspects of the Solidity implementation of the contracts.
 
 # Risk Classification
 
-|            |        | Impact |        |     |
-| ---------- | ------ | ------ | ------ | --- |
-|            |        | High   | Medium | Low |
-|            | High   | H      | H/M    | M   |
-| Likelihood | Medium | H/M    | M      | M/L |
-|            | Low    | M      | M/L    | L   |
+|            |        |      | Impact |     |
+| ---------- | ------ | ---- | ------ | --- |
+|            |        | High | Medium | Low |
+|            | High   | H    | H/M    | M   |
+| Likelihood | Medium | H/M  | M      | M/L |
+|            | Low    | M    | M/L    | L   |
 
 We use the [CodeHawks](https://docs.codehawks.com/hawks-auditors/how-to-evaluate-a-finding-severity) severity matrix to determine severity. See the documentation for more details.
 
